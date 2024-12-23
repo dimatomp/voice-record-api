@@ -19,14 +19,11 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("org.springframework:spring-web")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("io.github.jseproject:jse-spi-aac:1.0.2")
 	implementation("com.tianscar.javasound:javasound-alac:0.2.3")
-	implementation("org.mp4parser:muxer:1.9.56")
 	implementation("org.jcodec:jcodec:0.2.5")
+	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
