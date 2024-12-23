@@ -1,11 +1,9 @@
 package net.dimatomp.voice_record_api
 
-import org.jcodec.common.io.ByteBufferSeekableByteChannel
-import org.jcodec.containers.mp4.demuxer.MP4Demuxer
+import org.apache.commons.logging.LogFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -13,65 +11,47 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
-import java.nio.ByteBuffer
-import java.nio.channels.Channels
 import javax.sound.sampled.*
 
 
 @Controller
 @RequestMapping("/audio/user/{userId}/phrase/{phraseId}")
-class PhraseRecordingController @Autowired constructor(private val executor: ThreadPoolTaskExecutor) {
+class PhraseRecordingController @Autowired constructor(private val converters: Collection<InputFileDecoder>) {
+    companion object {
+        private val log = LogFactory.getLog(PhraseRecordingController::class.java)
+    }
+
     @PostMapping()
     fun storeRecord(@PathVariable userId: String, @PathVariable phraseId: String, @RequestParam("audio_file") file: MultipartFile): ResponseEntity<Any> {
-        val tracks = try {
-            // Sadly there does not seem to be any modern Java library for _streamed_ parsing of MP4;
-            // resorting to reading the entire input before processing.
-            // TODO Add validation rules to limit input size according to config
-            val bulkFileRead = file.resource.contentAsByteArray
-            val demuxer = MP4Demuxer.createMP4Demuxer(ByteBufferSeekableByteChannel(ByteBuffer.wrap(bulkFileRead), bulkFileRead.size))
-            demuxer.audioTracks
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return ResponseEntity("Invalid media format, only .m4a files are supported", HttpStatus.BAD_REQUEST)
+        val decoded = findDecoder(file.bytes) ?: return ResponseEntity("Unsupported file format", HttpStatus.BAD_REQUEST)
+        decoded.use {
+            val decodedFormat = decoded.format
+            val stored = AudioSystem.getAudioInputStream(
+                AudioFormat(
+                    AudioFormat.Encoding.PCM_FLOAT, decodedFormat.sampleRate, 32,
+                    1, 4, decodedFormat.frameRate,
+                    decodedFormat.isBigEndian, decodedFormat.properties()
+                ), decoded
+            )
+            FileOutputStream("test.wav").use { AudioSystem.write(stored, AudioFileFormat.Type.WAVE, it) }
         }
-        if (tracks.size != 1)
-            return ResponseEntity("No audio track found in MP4 file", HttpStatus.BAD_REQUEST);
-        val pipeIn = PipedInputStream()
-        val writeFuture = this.executor.submit {
+        return ResponseEntity(HttpStatus.CREATED)
+    }
+
+    private fun findDecoder(content: ByteArray): AudioInputStream? {
+        for (decoder in this.converters) {
             try {
-                val encoded = AudioSystem.getAudioInputStream(BufferedInputStream(pipeIn))
-                val encodedFormat = encoded.format
-                val decoded = AudioSystem.getAudioInputStream(
-                    AudioFormat(
-                        AudioFormat.Encoding.PCM_SIGNED, encodedFormat.sampleRate, 16,
-                        encodedFormat.channels, 2 * encodedFormat.channels, encodedFormat.frameRate,
-                        encodedFormat.isBigEndian, encodedFormat.properties()
-                    ), encoded
-                )
-                val decodedFormat = decoded.format
-                val stored = AudioSystem.getAudioInputStream(
-                    AudioFormat(
-                        AudioFormat.Encoding.PCM_FLOAT, decodedFormat.sampleRate, 32,
-                        1, 4, decodedFormat.frameRate,
-                        decodedFormat.isBigEndian, decodedFormat.properties()
-                    ), decoded
-                )
-                FileOutputStream("test.wav").use { AudioSystem.write(stored, AudioFileFormat.Type.WAVE, it) }
+                return decoder.decode(content)
             } catch (e: Exception) {
-                e.printStackTrace()
+                when (e) {
+                    is UnsupportedAudioFileException, is IOException, is IllegalArgumentException -> {
+                        // Errors are ok, this is how decoders will indicate incompatible format
+                        // (similar to javax.sound.sampled.AudioSystem)
+                        log.debug(e)
+                    }
+                }
             }
         }
-        PipedOutputStream(pipeIn).use {
-            val outChannel = Channels.newChannel(it)
-            val track = tracks[0]
-            do {
-                val packet = track.nextFrame()
-                packet?.data?.let {
-                    outChannel.write(packet.data)
-                }
-            } while (packet != null)
-        }
-        writeFuture.get()
-        return ResponseEntity(HttpStatus.CREATED)
+        return null
     }
 }
