@@ -1,11 +1,7 @@
 package net.dimatomp.voice_record_api
 
 import org.jcodec.common.io.ByteBufferSeekableByteChannel
-import org.jcodec.common.model.Packet
 import org.jcodec.containers.mp4.demuxer.MP4Demuxer
-import org.mp4parser.muxer.InMemRandomAccessSourceImpl
-import org.mp4parser.muxer.container.mp4.MovieCreator
-import org.mp4parser.tools.ByteBufferByteChannel
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,10 +15,6 @@ import org.springframework.web.multipart.MultipartFile
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
-import java.nio.channels.FileChannel
-import java.nio.channels.SeekableByteChannel
-import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import javax.sound.sampled.*
 
 
@@ -70,18 +62,14 @@ class PhraseRecordingController @Autowired constructor(private val executor: Thr
             }
         }
         PipedOutputStream(pipeIn).use {
-            FileChannel.open(Path.of("test.aac"), StandardOpenOption.WRITE, StandardOpenOption.CREATE).use { file ->
-                val outChannel = Channels.newChannel(it)
-                val track = tracks[0]
-                var packet: Packet?
-                do {
-                    packet = track.nextFrame()
-                    packet?.data?.let {
-                        //outChannel.write(packet.data)
-                        file.write(it)
-                    }
-                } while (packet != null)
-            }
+            val outChannel = Channels.newChannel(it)
+            val track = tracks[0]
+            do {
+                val packet = track.nextFrame()
+                packet?.data?.let {
+                    outChannel.write(packet.data)
+                }
+            } while (packet != null)
         }
         writeFuture.get()
         return ResponseEntity(HttpStatus.CREATED)
