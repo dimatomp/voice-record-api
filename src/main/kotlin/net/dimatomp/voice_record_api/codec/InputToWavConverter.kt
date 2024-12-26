@@ -19,7 +19,7 @@ import java.io.PipedOutputStream
 @Component
 class InputToWavConverter @Autowired constructor(
     private val converters: Collection<InputFileDecoder>,
-    private val executor: ThreadPoolTaskExecutor 
+    private val executor: ConversionJobExecutor
 ) {
     companion object {
         private val log = LogFactory.getLog(InputToWavConverter::class.java)
@@ -28,21 +28,19 @@ class InputToWavConverter @Autowired constructor(
     fun convertToWav(input: MultipartFile): InputStream {
         val decoded = findDecoder(input.bytes)
         require(decoded != null) { "Unsupported file format" }
-        val decodedFormat = decoded.format
-        val stored = AudioSystem.getAudioInputStream(
-            AudioFormat(
-                AudioFormat.Encoding.PCM_FLOAT, decodedFormat.sampleRate, 32,
-                1, 4, decodedFormat.frameRate,
-                decodedFormat.isBigEndian, decodedFormat.properties()
-            ), decoded
-        )
-
-        val pipeIn = PipedInputStream()
-        val pipeOut = PipedOutputStream(pipeIn)
-        executor.execute {
-            pipeOut.use { stored.use { AudioSystem.write(stored, AudioFileFormat.Type.WAVE, pipeOut) } }
+        return executor.convertInParallel { pipeOut -> 
+            decoded.use {
+                val decodedFormat = decoded.format
+                val stored = AudioSystem.getAudioInputStream(
+                    AudioFormat(
+                        AudioFormat.Encoding.PCM_FLOAT, decodedFormat.sampleRate, 32,
+                        1, 4, decodedFormat.frameRate,
+                        decodedFormat.isBigEndian, decodedFormat.properties()
+                    ), decoded
+                )
+                AudioSystem.write(stored, AudioFileFormat.Type.WAVE, pipeOut)
+            }
         }
-        return pipeIn
     }
 
     private fun findDecoder(content: ByteArray): AudioInputStream? {

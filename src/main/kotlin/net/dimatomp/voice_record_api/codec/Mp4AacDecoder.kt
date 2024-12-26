@@ -16,7 +16,7 @@ import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
 @Component
-class Mp4AacDecoder @Autowired constructor(private val executor: ThreadPoolTaskExecutor) : InputFileDecoder {
+class Mp4AacDecoder @Autowired constructor(private val executor: ConversionJobExecutor) : InputFileDecoder {
     companion object {
         private val log = LogFactory.getLog(Mp4AacDecoder::class.java)
     }
@@ -25,20 +25,13 @@ class Mp4AacDecoder @Autowired constructor(private val executor: ThreadPoolTaskE
         val byteChannel = ByteBufferSeekableByteChannel.readFromByteBuffer(ByteBuffer.wrap(fileContent))
         val audioTracks = MP4Demuxer.createMP4Demuxer(byteChannel).audioTracks
         require(audioTracks.size == 1) { "Should be exactly 1 audio track in MP4 file" }
-        val pipeIn = PipedInputStream()
-        val pipeOut = Channels.newChannel(PipedOutputStream(pipeIn))
-        executor.execute {
-            pipeOut.use {
-                try {
-                    val track = audioTracks[0]
-                    do {
-                        val packet = track.nextFrame()
-                        packet?.data?.let { pipeOut.write(it) }
-                    } while (packet != null)
-                } catch (e: Throwable) {
-                    log.debug(e)
-                }
-            }
+        val pipeIn = executor.convertInParallel {
+            val pipeOut = Channels.newChannel(it)
+            val track = audioTracks[0]
+            do {
+                val packet = track.nextFrame()
+                packet?.data?.let { pipeOut.write(it) }
+            } while (packet != null)
         }
         try {
             // relying on io.github.jseproject:jse-spi-aac here

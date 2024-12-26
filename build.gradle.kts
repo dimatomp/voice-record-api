@@ -27,13 +27,14 @@ dependencies {
 	implementation("org.jcodec:jcodec:0.2.5")
 	implementation("org.sheinbergon:jna-aac-encoder:2.1.0")
 	implementation("org.mp4parser:muxer:1.9.56")
+	runtimeOnly("org.liquibase:liquibase-core:4.24.0")
+	runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
+
 	liquibaseRuntime("org.liquibase:liquibase-core:4.24.0")
     liquibaseRuntime("org.liquibase:liquibase-groovy-dsl:2.1.1")
     liquibaseRuntime("info.picocli:picocli:4.7.5")
     liquibaseRuntime("org.yaml:snakeyaml:1.33")
 	liquibaseRuntime("com.mysql:mysql-connector-j:8.4.0")
-	runtimeOnly("org.liquibase:liquibase-core:4.24.0")
-	runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
