@@ -1,4 +1,4 @@
-package net.dimatomp.voice_record_api
+package net.dimatomp.voice_record_api.codec
 
 import org.springframework.stereotype.Component
 import java.io.ByteArrayInputStream

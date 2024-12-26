@@ -1,4 +1,4 @@
-package net.dimatomp.voice_record_api
+package net.dimatomp.voice_record_api.codec
 
 import javax.sound.sampled.AudioInputStream
 

@@ -1,4 +1,4 @@
-package net.dimatomp.voice_record_api
+package net.dimatomp.voice_record_api.codec
 
 import org.mp4parser.muxer.MemoryDataSourceImpl
 import org.mp4parser.muxer.Movie
