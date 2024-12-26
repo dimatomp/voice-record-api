@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: Dmitry Tomp
+      changes:
+        - createTable:
+            tableName: voice_records
+            columns:
+              - column:
+                  name: id
+                  type: INT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: INT
+                  constraints:
+                    foreignKeyName: "user_of_voice_record"
+                    references: "users(id)"
+                    nullable: false
+              - column:
+                  name: phrase_id
+                  type: INT
+                  constraints:
+                    foreignKeyName: "phrase_of_voice_record"
+                    references: "phrases(id)"
+                    nullable: false
+              - column:
+                  name: content
+                  type: MEDIUMBLOB
+                  constraints:
+                    nullable: false

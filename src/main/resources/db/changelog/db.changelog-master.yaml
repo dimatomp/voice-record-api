@@ -3,3 +3,5 @@ databaseChangeLog:
      file: db/changelog/20241226-init.yaml
  - include:
      file: db/changelog/20241226-seed.yaml
+ - include:
+     file: db/changelog/20241226-voice-records.yaml

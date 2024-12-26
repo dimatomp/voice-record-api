@@ -10,8 +10,9 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.*
 import javax.sound.sampled.*
-import net.dimatomp.voice_record_api.db.UserRepository
-import net.dimatomp.voice_record_api.db.PhraseRepository
+import net.dimatomp.voice_record_api.db.UserReadAccessor
+import net.dimatomp.voice_record_api.db.PhraseReadAccessor
+import net.dimatomp.voice_record_api.db.VoiceRecordWriteAccessor
 import net.dimatomp.voice_record_api.codec.InputToWavConverter
 import net.dimatomp.voice_record_api.codec.AacMp4Encoder
 
@@ -21,8 +22,9 @@ import net.dimatomp.voice_record_api.codec.AacMp4Encoder
 class PhraseRecordingController @Autowired constructor(
     private val inputConverter: InputToWavConverter,
     private val aacMp4Encoder: AacMp4Encoder,
-    private val userRepo: UserRepository,
-    private val phraseRepo: PhraseRepository
+    private val userRead: UserReadAccessor,
+    private val phraseRead: PhraseReadAccessor,
+    private val recordWrite: VoiceRecordWriteAccessor,
 ) {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleInvalidInput(e: IllegalArgumentException): ResponseEntity<String> {
@@ -33,7 +35,7 @@ class PhraseRecordingController @Autowired constructor(
     @ResponseStatus(HttpStatus.CREATED)
     fun storeRecord(@PathVariable userId: Int, @PathVariable phraseId: Int, @RequestParam("audio_file") file: MultipartFile) {
         validate(userId, phraseId)
-        FileOutputStream("test.wav").use { inputConverter.convertToWav(file, it) }
+        inputConverter.convertToWav(file).use { recordWrite.saveRecord(userId, phraseId, it) }
     }
 
     @GetMapping("/{audioFormat}")
@@ -49,7 +51,7 @@ class PhraseRecordingController @Autowired constructor(
     }
 
     private fun validate(userId: Int, phraseId: Int) {
-        require(userRepo.existsById(userId)) { "User not found" }
-        require(phraseRepo.existsById(phraseId)) { "Phrase not found" }
+        require(userRead.doesUserExist(userId)) { "User not found" }
+        require(phraseRead.doesPhraseExist(phraseId)) { "Phrase not found" }
     }
 }
