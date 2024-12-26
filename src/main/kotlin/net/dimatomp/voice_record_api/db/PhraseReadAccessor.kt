@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.RowMapper
 import java.sql.Types
 
 @Component
-class PhraseReadAccessor @Autowired constructor(val jdbc: JdbcTemplate) {
+class PhraseReadAccessor @Autowired constructor(private val jdbc: JdbcTemplate) {
     fun doesPhraseExist(id: Int): Boolean {
         return jdbc.query(
             "SELECT EXISTS(SELECT 1 FROM phrases WHERE id = ?)",

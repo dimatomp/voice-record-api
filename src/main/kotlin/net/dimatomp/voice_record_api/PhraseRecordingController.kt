@@ -13,6 +13,7 @@ import javax.sound.sampled.*
 import net.dimatomp.voice_record_api.db.UserReadAccessor
 import net.dimatomp.voice_record_api.db.PhraseReadAccessor
 import net.dimatomp.voice_record_api.db.VoiceRecordWriteAccessor
+import net.dimatomp.voice_record_api.db.VoiceRecordReadAccessor
 import net.dimatomp.voice_record_api.codec.InputToWavConverter
 import net.dimatomp.voice_record_api.codec.AacMp4Encoder
 
@@ -25,6 +26,7 @@ class PhraseRecordingController @Autowired constructor(
     private val userRead: UserReadAccessor,
     private val phraseRead: PhraseReadAccessor,
     private val recordWrite: VoiceRecordWriteAccessor,
+    private val recordRead: VoiceRecordReadAccessor
 ) {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleInvalidInput(e: IllegalArgumentException): ResponseEntity<String> {
@@ -42,11 +44,14 @@ class PhraseRecordingController @Autowired constructor(
     fun fetchRecord(@PathVariable userId: Int, @PathVariable phraseId: Int, @PathVariable audioFormat: String): ResponseEntity<StreamingResponseBody> {
         validate(userId, phraseId)
         require(audioFormat == "m4a") { "Unsupported audio format" }
-        return ResponseEntity.ok().run {
-            header("Content-Type", "audio/mp4")
-            body(StreamingResponseBody { out ->
-                FileInputStream("test.wav").use { input -> aacMp4Encoder.encode(input, out) }
-            })
+        return recordRead.readVoiceRecord(userId, phraseId) { record ->
+            if (record == null)
+                ResponseEntity(HttpStatus.NOT_FOUND)
+            else 
+                ResponseEntity.ok().run {
+                    header("Content-Type", "audio/mp4")
+                    body(StreamingResponseBody { out -> aacMp4Encoder.encode(record, out) })
+                }
         }
     }
 

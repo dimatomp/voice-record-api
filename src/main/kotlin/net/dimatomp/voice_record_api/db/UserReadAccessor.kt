@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.RowMapper
 import java.sql.Types
 
 @Component
-class UserReadAccessor @Autowired constructor(val jdbc: JdbcTemplate) {
+class UserReadAccessor @Autowired constructor(private val jdbc: JdbcTemplate) {
     fun doesUserExist(id: Int): Boolean {
         return jdbc.query(
             "SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)",
