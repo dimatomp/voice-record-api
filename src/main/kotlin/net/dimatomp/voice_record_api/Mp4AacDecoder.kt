@@ -22,21 +22,18 @@ class Mp4AacDecoder @Autowired constructor(private val executor: ThreadPoolTaskE
     }
 
     override fun decode(fileContent: ByteArray): AudioInputStream {
-        val byteChannel = ByteBufferSeekableByteChannel(ByteBuffer.wrap(fileContent), fileContent.size)
+        val byteChannel = ByteBufferSeekableByteChannel.readFromByteBuffer(ByteBuffer.wrap(fileContent))
         val audioTracks = MP4Demuxer.createMP4Demuxer(byteChannel).audioTracks
         require(audioTracks.size == 1) { "Should be exactly 1 audio track in MP4 file" }
         val pipeIn = PipedInputStream()
-        val pipeOut = PipedOutputStream(pipeIn)
+        val pipeOut = Channels.newChannel(PipedOutputStream(pipeIn))
         executor.execute {
             pipeOut.use {
                 try {
-                    val outChannel = Channels.newChannel(pipeOut)
                     val track = audioTracks[0]
                     do {
                         val packet = track.nextFrame()
-                        packet?.data?.let {
-                            outChannel.write(packet.data)
-                        }
+                        packet?.data?.let { pipeOut.write(it) }
                     } while (packet != null)
                 } catch (e: Throwable) {
                     log.debug(e)

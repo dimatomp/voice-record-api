@@ -15,13 +15,8 @@ class AlacFileDecoder: InputFileDecoder {
         val encodedFormat = encoded.format
         return AudioSystem.getAudioInputStream(
             AudioFormat(
-                AudioFormat.Encoding.PCM_SIGNED,
-                -1.0f,
-                encodedFormat.sampleSizeInBits,
-                encodedFormat.channels,
-                -1,
-                -1.0f,
-                encodedFormat.isBigEndian
+                AudioFormat.Encoding.PCM_SIGNED, -1.0f, encodedFormat.sampleSizeInBits,
+                encodedFormat.channels, -1, -1.0f, encodedFormat.isBigEndian
             ), encoded
         )
     }
