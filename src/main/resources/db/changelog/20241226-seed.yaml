@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: Dmitry Tomp
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: 1
+        - insert:
+            tableName: phrases
+            columns:
+              - column:
+                  name: id
+                  value: 1

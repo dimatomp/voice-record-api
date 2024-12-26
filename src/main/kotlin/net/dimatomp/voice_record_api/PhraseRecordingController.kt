@@ -10,20 +10,29 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.*
 import javax.sound.sampled.*
+import net.dimatomp.voice_record_api.db.UserRepository
+import net.dimatomp.voice_record_api.db.PhraseRepository
 
 
 @Controller
 @RequestMapping("/audio/user/{userId}/phrase/{phraseId}")
 class PhraseRecordingController @Autowired constructor(
     private val converters: Collection<InputFileDecoder>,
-    private val aacMp4Encoder: AacMp4Encoder
+    private val aacMp4Encoder: AacMp4Encoder,
+    private val userRepo: UserRepository,
+    private val phraseRepo: PhraseRepository
 ) {
     companion object {
         private val log = LogFactory.getLog(PhraseRecordingController::class.java)
     }
 
     @PostMapping
-    fun storeRecord(@PathVariable userId: String, @PathVariable phraseId: String, @RequestParam("audio_file") file: MultipartFile): ResponseEntity<String> {
+    fun storeRecord(@PathVariable userId: Int, @PathVariable phraseId: Int, @RequestParam("audio_file") file: MultipartFile): ResponseEntity<String> {
+        try {
+            validate(userId, phraseId)
+        } catch (e: IllegalArgumentException) {
+            return ResponseEntity(e.message, HttpStatus.BAD_REQUEST)
+        }
         val decoded = findDecoder(file.bytes) ?: return ResponseEntity("Unsupported file format", HttpStatus.BAD_REQUEST)
         decoded.use {
             val decodedFormat = decoded.format
@@ -40,7 +49,12 @@ class PhraseRecordingController @Autowired constructor(
     }
 
     @GetMapping("/{audioFormat}")
-    fun fetchRecord(@PathVariable userId: String, @PathVariable phraseId: String, @PathVariable audioFormat: String): ResponseEntity<StreamingResponseBody> {
+    fun fetchRecord(@PathVariable userId: Int, @PathVariable phraseId: Int, @PathVariable audioFormat: String): ResponseEntity<StreamingResponseBody> {
+        try {
+            validate(userId, phraseId)
+        } catch (e: IllegalArgumentException) {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
         if (audioFormat != "m4a") return ResponseEntity(HttpStatus.BAD_REQUEST)
         return ResponseEntity.ok().run {
             header("Content-Type", "audio/mp4")
@@ -48,6 +62,11 @@ class PhraseRecordingController @Autowired constructor(
                 FileInputStream("test.wav").use { input -> aacMp4Encoder.encode(input, out) }
             })
         }
+    }
+
+    private fun validate(userId: Int, phraseId: Int) {
+        require(userRepo.existsById(userId)) { "User not found" }
+        require(phraseRepo.existsById(phraseId)) { "Phrase not found" }
     }
 
     private fun findDecoder(content: ByteArray): AudioInputStream? {

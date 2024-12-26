@@ -1,0 +1,30 @@
+databaseChangeLog:
+ - changeSet:
+     id: 1
+     author: Dmitry Tomp
+     preConditions:
+       - onFail: MARK_RAN
+         not:
+           tableExists:
+             tableName: users
+     changes:
+       - createTable:
+           tableName: users
+           columns:
+             - column:
+                 name: id
+                 type: INT
+                 autoIncrement: true
+                 constraints:
+                   primaryKey: true
+                   nullable: false
+       - createTable:
+           tableName: phrases
+           columns:
+             - column:
+                 name: id
+                 type: INT
+                 autoIncrement: true
+                 constraints:
+                   primaryKey: true
+                   nullable: false

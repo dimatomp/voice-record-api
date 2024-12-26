@@ -20,11 +20,14 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("io.github.jseproject:jse-spi-aac:1.0.2")
 	implementation("com.tianscar.javasound:javasound-alac:0.2.3")
 	implementation("org.jcodec:jcodec:0.2.5")
 	implementation("org.sheinbergon:jna-aac-encoder:2.1.0")
 	implementation("org.mp4parser:muxer:1.9.56")
+	runtimeOnly("org.liquibase:liquibase-core")
+	runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -35,6 +38,12 @@ kotlin {
 	compilerOptions {
 		freeCompilerArgs.addAll("-Xjsr305=strict")
 	}
+}
+
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
 }
 
 tasks.withType<Test> {
