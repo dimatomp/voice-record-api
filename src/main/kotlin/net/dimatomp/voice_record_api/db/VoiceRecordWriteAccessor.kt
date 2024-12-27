@@ -9,11 +9,9 @@ import java.io.InputStream
 
 @Component
 class VoiceRecordWriteAccessor @Autowired constructor(
-    private val jdbc: JdbcTemplate,
-    private val trxMgr: PlatformTransactionManager
+    private val jdbc: JdbcTemplate
 ) {
     fun saveRecord(userId: Int, phraseId: Int, record: InputStream) {
-        val state = trxMgr.getTransaction(DefaultTransactionDefinition())
         try {
             jdbc.execute("INSERT INTO voice_records (user_id, phrase_id, content) VALUES (?, ?, ?)") {
                 it.setInt(1, userId)
@@ -21,9 +19,7 @@ class VoiceRecordWriteAccessor @Autowired constructor(
                 it.setBinaryStream(3, record)
                 it.executeUpdate()
             }
-            trxMgr.commit(state)
         } catch (e: Throwable) {
-            trxMgr.rollback(state)
             throw e
         }
     }
