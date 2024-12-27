@@ -12,15 +12,11 @@ class VoiceRecordWriteAccessor @Autowired constructor(
     private val jdbc: JdbcTemplate
 ) {
     fun saveRecord(userId: Int, phraseId: Int, record: InputStream) {
-        try {
-            jdbc.execute("INSERT INTO voice_records (user_id, phrase_id, content) VALUES (?, ?, ?)") {
-                it.setInt(1, userId)
-                it.setInt(2, phraseId)
-                it.setBinaryStream(3, record)
-                it.executeUpdate()
-            }
-        } catch (e: Throwable) {
-            throw e
+        jdbc.execute("INSERT INTO voice_records (user_id, phrase_id, content) VALUES (?, ?, ?)") {
+            it.setInt(1, userId)
+            it.setInt(2, phraseId)
+            it.setBinaryStream(3, record)
+            it.executeUpdate()
         }
     }
 }
