@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_DATABASE: voice_records
+      MYSQL_ROOT_PASSWORD: 12345678
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  spring-boot-gradle:
+    image: gradle:jdk21
+    container_name: spring-boot-gradle
+    working_dir: /app
+    volumes:
+      - .:/app  # Mount your Spring Boot project folder here
+      - gradle-cache:/home/gradle/.gradle  # Cache Gradle dependencies
+    command: ["gradle", "bootRun"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/voice_records
+    ports:
+      - "8080:8080"  # Expose Spring Boot app on port 8080
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data:
+  gradle-cache:

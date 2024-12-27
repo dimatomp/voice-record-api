@@ -42,13 +42,15 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+val localDbUrl = "jdbc:mysql://localhost:3306/voice_records?createDatabaseIfNotExist=true"
+
 liquibase {
     activities.run {
         register("main") {
 			arguments = mapOf(
                 "driver" to "com.mysql.cj.jdbc.Driver",
                 "changelogFile" to "db/changelog/db.changelog-master.yaml",
-				"url" to "jdbc:mysql://localhost:3306/voice_records",
+				"url" to (System.getenv("SPRING_DATASOURCE_URL") ?: localDbUrl),
 				"username" to "root",
 				"password" to "12345678",
 				"classpath" to "$rootDir/src/main/resources"
@@ -72,4 +74,5 @@ allOpen {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+    environment["SPRING_DATASOURCE_URL"] = localDbUrl
 }
