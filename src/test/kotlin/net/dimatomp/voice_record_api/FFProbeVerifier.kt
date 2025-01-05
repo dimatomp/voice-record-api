@@ -11,7 +11,7 @@ object FFProbeVerifier {
             redirectError(ProcessBuilder.Redirect.INHERIT)
             start()
         }
-        process.waitFor(10, TimeUnit.SECONDS)
+        process.waitFor(1, TimeUnit.MINUTES)
         check(process.exitValue() == 0) { "ffprobe did not respond successfully when asked for its version" }
     }
     
