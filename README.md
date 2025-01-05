@@ -33,6 +33,8 @@ Some additional dependencies required to run available automated tests:
 With both above parts ready, tests can be run with Gradle:
 ```sh
 ./gradlew test
+# or, if you have Gradle 8 installed:
+gradle test
 ```
 
 ## Some improvement thoughts/ideas
